@@ -1,34 +1,41 @@
+/*
+  * Programa: Algoritmo concorrente para ordenar blocos de valores de um arquivo de entrada
+  * Alunos: Gabriele Jandres Cavalcanti e Thiago Figueiredo Lopes de Castro | DREs: 119159948 e 118090044
+  * Disciplina: Computacao Concorrente - 2021.1
+  * Modulo 2 - Trabalho 2
+  * Data: Setembro de 2021
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdbool.h>
+#include "./libs/timer.h"
+#include "./resources/merge_sort.h"
 
-#include "merge_sort.h"
-
-#define NUM_PRODUTORES 1 // Definido no roteiro
-#define NUM_BLOCOS_BUFFER 10 // Definido no roteiro. São 10 bufferse e cada um com tamanho N
-
+#define NUM_PRODUTORES 1 // numero de threads produtoras
+#define NUM_BLOCOS_BUFFER 10 // numero de blocos do buffer (10 blocos de tamanho N)
 
 /*
- * Semáforo de consumidores => Exclusão mútua entre os consumidores
- * Semáforo de slot vazio => Sinalização de um slot preenchido para consumo
- * Semáforo de slot cheio => Sinalização de que todos os slots estão preenchidos
- * Semáforo de arquivo livre => Exclusão mútua entre os consumidores para a leitura do arquivo, permitindo apenas um por vez.
+ * Semï¿½foro de consumidores => Exclusï¿½o mï¿½tua entre os consumidores
+ * Semï¿½foro de slot vazio => Sinalizaï¿½ï¿½o de um slot preenchido para consumo
+ * Semï¿½foro de slot cheio => Sinalizaï¿½ï¿½o de que todos os slots estï¿½o preenchidos
+ * Semï¿½foro de arquivo livre => Exclusï¿½o mï¿½tua entre os consumidores para a leitura do arquivo, permitindo apenas um por vez.
 */
 
 sem_t consumidores, slot_vazio, slot_cheio, arquivo_livre;
 
-/* Exclusão mútua para a verificação da necessidade de ler a última linha órfa, em caso da presença da mesma */
+/* Exclusï¿½o mï¿½tua para a verificaï¿½ï¿½o da necessidade de ler a ï¿½ltima linha ï¿½rfa, em caso da presenï¿½a da mesma */
 
 pthread_mutex_t mutex;
 
 /*
  * Buffer (10 X N) => Buffer compartilhado entre os arquivos
- * Número de consumidores solicitado
+ * Nï¿½mero de consumidores solicitado
  * N => Tamanho dos blocos
- * Quantidade de números => Lido na primeira linha dos arquivos
- * Número de linhas => Divisão entre a quantidade de números e o tamanho dos blocos. Se houver resto, haverá uma linha órfã
+ * Quantidade de nï¿½meros => Lido na primeira linha dos arquivos
+ * Nï¿½mero de linhas => Divisï¿½o entre a quantidade de nï¿½meros e o tamanho dos blocos. Se houver resto, haverï¿½ uma linha ï¿½rfï¿½
 */
 
 int *buffer[10], num_consumidores, N, qtd_numeros, num_linhas;
@@ -36,29 +43,29 @@ int *buffer[10], num_consumidores, N, qtd_numeros, num_linhas;
 char *local_arquivo_entrada, *local_arquivo_saida; // Locais dos arquivos
 
 /*
- * Funcão utilizada para o processamento da última linha presente no caso de que o tamanho do bloco
- * não divide a quantidade de números. Ou seja, os blocos não são uniformes.
- * Vetor => espaço para guardar os valores
- * Arq => Arquivo de saída
+ * Funcï¿½o utilizada para o processamento da ï¿½ltima linha presente no caso de que o tamanho do bloco
+ * nï¿½o divide a quantidade de nï¿½meros. Ou seja, os blocos nï¿½o sï¿½o uniformes.
+ * Vetor => espaï¿½o para guardar os valores
+ * Arq => Arquivo de saï¿½da
 */
 
-// --------------------------------------------------- FUNÇÕES ---------------------------------------------------
+// --------------------------------------------------- FUNï¿½ï¿½ES ---------------------------------------------------
 
 void ordena_linha_orfa(int *vetor, FILE *arq)
 {
     sem_wait(&slot_cheio); // Aguarda o slot para leitura
 
     /*
-     * A linha órfã SEMPRE será a última no buffer, pois o arquivo está sendo lido do início ao fim em ordem e só há um produtor.
-     * Logo, será exatamente o número de linhas MOD número de buffers.
+     * A linha ï¿½rfï¿½ SEMPRE serï¿½ a ï¿½ltima no buffer, pois o arquivo estï¿½ sendo lido do inï¿½cio ao fim em ordem e sï¿½ hï¿½ um produtor.
+     * Logo, serï¿½ exatamente o nï¿½mero de linhas MOD nï¿½mero de buffers.
     */
 
     for (int i = 0 ; i < qtd_numeros % N ; i++)
         vetor[i] = buffer[num_linhas % NUM_BLOCOS_BUFFER][i];
 
-    sem_post(&slot_vazio); // Sinaliza que leu a última linha
+    sem_post(&slot_vazio); // Sinaliza que leu a ï¿½ltima linha
 
-    merge_sort(vetor, 0, (qtd_numeros % N) - 1); // Chama o algoritmo de ordenação
+    merge_sort(vetor, 0, (qtd_numeros % N) - 1); // Chama o algoritmo de ordenaï¿½ï¿½o
 
     sem_wait(&arquivo_livre); // Sinaliza que vai utilizar o arquivo
 
@@ -72,7 +79,7 @@ void ordena_linha_orfa(int *vetor, FILE *arq)
 }
 
 /*
- * Funcão do produtor
+ * Funcï¿½o do produtor
  * Recebe o descritor do arquivo de entrada
 */
 
@@ -82,15 +89,15 @@ void * le_arquivo(void *arg)
 
     int contador_linhas = 0; // Conta quantas linhas UNIFORMES faltam
 
-    int in = 0; // Indica qual slot será guardado a leitura
+    int in = 0; // Indica qual slot serï¿½ guardado a leitura
 
     while (contador_linhas < num_linhas)
     {
-        sem_wait(&slot_vazio); // Verifica se há algum slot liberado para produção
+        sem_wait(&slot_vazio); // Verifica se hï¿½ algum slot liberado para produï¿½ï¿½o
 
         for (int i = 0 ; i < N ; i++)
         {
-            fscanf(arq, "%d", &buffer[in][i]); // Guarda o número no slot atual e na posição do vetor
+            fscanf(arq, "%d", &buffer[in][i]); // Guarda o nï¿½mero no slot atual e na posiï¿½ï¿½o do vetor
             printf("%d ", buffer[in][i]);
         }
 
@@ -103,7 +110,7 @@ void * le_arquivo(void *arg)
         contador_linhas++; // Indica que leu uma linha
     }
 
-    if (qtd_numeros % N != 0) // N não é divisor da quantidade de números no arquivo. Haverá uma linha órfã.
+    if (qtd_numeros % N != 0) // N nï¿½o ï¿½ divisor da quantidade de nï¿½meros no arquivo. Haverï¿½ uma linha ï¿½rfï¿½.
     {
         sem_wait(&slot_vazio);
 
@@ -121,11 +128,11 @@ void * le_arquivo(void *arg)
 }
 
 /*
- * Função concorrente dos consumidores
- * Segue o padrão de consumidores, com exceção da última verificação
- * No caso de todos os blocos não serem uniformes, haverá uma linha órfa
- * Depois que ela é processada, é marcada uma variável indicando que ela já foi processada
- * Recebe o descritor do arquivo de saída.
+ * Funï¿½ï¿½o concorrente dos consumidores
+ * Segue o padrï¿½o de consumidores, com exceï¿½ï¿½o da ï¿½ltima verificaï¿½ï¿½o
+ * No caso de todos os blocos nï¿½o serem uniformes, haverï¿½ uma linha ï¿½rfa
+ * Depois que ela ï¿½ processada, ï¿½ marcada uma variï¿½vel indicando que ela jï¿½ foi processada
+ * Recebe o descritor do arquivo de saï¿½da.
 */
 
 void * ordena_blocos(void *arg)
@@ -136,20 +143,20 @@ void * ordena_blocos(void *arg)
 
     static int contador_linhas = 0, out = 0; // Contador compartilhado entre as threads e contador do buffer
 
-    static bool deve_ler_ultima_linha = true; // Inicialmente, todas têm a possibilidade de serem a primeira a ler uma linha órfã.
+    static bool deve_ler_ultima_linha = true; // Inicialmente, todas tï¿½m a possibilidade de serem a primeira a ler uma linha ï¿½rfï¿½.
 
     pthread_mutex_lock(&mutex);
 
-    /* Se última thread ficar na fila, há a possibilidade de outras já terem iniciado.
+    /* Se ï¿½ltima thread ficar na fila, hï¿½ a possibilidade de outras jï¿½ terem iniciado.
      * Essa linha realiza essa captura inicial.*/
 
     contador_linhas_thread = contador_linhas; 
 
     pthread_mutex_unlock(&mutex);
 
-    while (contador_linhas_thread < num_linhas) // Mesmo raciocínio da thread produtora
+    while (contador_linhas_thread < num_linhas) // Mesmo raciocï¿½nio da thread produtora
     {
-        /* Verifica se não irá ler linhas a mais */
+        /* Verifica se nï¿½o irï¿½ ler linhas a mais */
 
         pthread_mutex_lock(&mutex);
 
@@ -165,7 +172,7 @@ void * ordena_blocos(void *arg)
 
         pthread_mutex_unlock(&mutex);
 
-        /* Padrão de consumidores */
+        /* Padrï¿½o de consumidores */
 
         sem_wait(&slot_cheio);
 
@@ -192,25 +199,25 @@ void * ordena_blocos(void *arg)
             
     }
     
-    if (qtd_numeros % N != 0) // Haverá linha órfa apenas se um não for múltiplo/divisor do outro
+    if (qtd_numeros % N != 0) // Haverï¿½ linha ï¿½rfa apenas se um nï¿½o for mï¿½ltiplo/divisor do outro
     {
         pthread_mutex_lock(&mutex);
 
         bool leu_linha_orfa = deve_ler_ultima_linha;
 
-        if (leu_linha_orfa) // Alguma thread já tratou da linha órfã
+        if (leu_linha_orfa) // Alguma thread jï¿½ tratou da linha ï¿½rfï¿½
             deve_ler_ultima_linha = false;
 
         pthread_mutex_unlock(&mutex);
 
-        if (leu_linha_orfa) // É testado novamente apenas para liberar o lock mais rapidamente, chamando a função agora
+        if (leu_linha_orfa) // ï¿½ testado novamente apenas para liberar o lock mais rapidamente, chamando a funï¿½ï¿½o agora
             ordena_linha_orfa(bloco, arq);
     }    
 
     pthread_exit(NULL);    
 }
 
-/* Função unificada para abrir/criar arquivo */
+/* Funï¿½ï¿½o unificada para abrir/criar arquivo */
 
 bool toca_arquivo(FILE **arq, const char *local, const char *modo)
 {
@@ -222,13 +229,13 @@ bool toca_arquivo(FILE **arq, const char *local, const char *modo)
     return true;
 }
 
-/* Realiza a recepção e tratamento dos argumentos da linha de comando */
+/* Realiza a recepï¿½ï¿½o e tratamento dos argumentos da linha de comando */
 
 void recebe_argumentos(int argc, char **argv)
 {
     if (argc < 5)
     {
-        printf("Digite %s <número de consumidores> <tamanho do bloco> <local do arquivo de entrada> <local do arquivo de saída>.", argv[0]);
+        printf("Digite %s <nï¿½mero de consumidores> <tamanho do bloco> <local do arquivo de entrada> <local do arquivo de saï¿½da>.", argv[0]);
         exit(1);
     }
 
@@ -239,12 +246,12 @@ void recebe_argumentos(int argc, char **argv)
 
     if (num_consumidores <= 0 || N <= 0)
     {
-        puts("Digite um número de consumidores maior que 0 e um tamanho de bloco maior que 1.");
+        puts("Digite um nï¿½mero de consumidores maior que 0 e um tamanho de bloco maior que 1.");
         exit(2);
     }
 }
 
-/* Alocação de espaço para recursos */
+/* Alocaï¿½ï¿½o de espaï¿½o para recursos */
 
 void inicializa_recursos()
 {
@@ -254,7 +261,7 @@ void inicializa_recursos()
 
         if (!(buffer[i]))
         {
-            printf("Erro ao alocar espaço para o buffer %d.\n", i);
+            printf("Erro ao alocar espaï¿½o para o buffer %d.\n", i);
 
             for (int j = 0 ; j < i ; j++)
                 free(buffer[j]);
@@ -264,13 +271,13 @@ void inicializa_recursos()
     }
 
     sem_init(&consumidores, 0, 1); // Apenas um consumidor pode ler o slot
-    sem_init(&slot_vazio, 0, NUM_BLOCOS_BUFFER); // Produtor pode guardar números em todos os slots inicialmente
-    sem_init(&slot_cheio, 0, 0); // Não há slot ocupado no começo. Consumidores irão aguardar
-    sem_init(&arquivo_livre, 0, 1); // Seguindo o padrão leitor/escritor, apenas uma thread pode escrever no arquivo de saída
-    pthread_mutex_init(&mutex, NULL); // Exclusão mútua para leitura da variável de verificação da linha órfã
+    sem_init(&slot_vazio, 0, NUM_BLOCOS_BUFFER); // Produtor pode guardar nï¿½meros em todos os slots inicialmente
+    sem_init(&slot_cheio, 0, 0); // Nï¿½o hï¿½ slot ocupado no comeï¿½o. Consumidores irï¿½o aguardar
+    sem_init(&arquivo_livre, 0, 1); // Seguindo o padrï¿½o leitor/escritor, apenas uma thread pode escrever no arquivo de saï¿½da
+    pthread_mutex_init(&mutex, NULL); // Exclusï¿½o mï¿½tua para leitura da variï¿½vel de verificaï¿½ï¿½o da linha ï¿½rfï¿½
 }
 
-/* Liberação de recursos alocados no começo do programa */
+/* Liberaï¿½ï¿½o de recursos alocados no comeï¿½o do programa */
 
 void libera_recursos()
 {
@@ -297,16 +304,16 @@ void inicializa_threads()
 
     if (!toca_arquivo(&arq_saida, local_arquivo_saida, "w"))
     {
-        printf("Erro ao criar o arquivo de saída.\n");
+        printf("Erro ao criar o arquivo de saï¿½da.\n");
         fclose(arq_entrada);
         exit(4);
     }
 
-    fscanf(arq_entrada, "%d", &qtd_numeros); // Lê a quantidade de números
+    fscanf(arq_entrada, "%d", &qtd_numeros); // Lï¿½ a quantidade de nï¿½meros
 
     /*if (qtd_numeros % 10 != 0)
     {
-        puts("A quantidade de números no arquivo deve ser um múltiplo de 10.");
+        puts("A quantidade de nï¿½meros no arquivo deve ser um mï¿½ltiplo de 10.");
         fclose(arq_entrada);
         fclose(arq_saida);
         libera_recursos();
@@ -317,7 +324,7 @@ void inicializa_threads()
 
     if (qtd_numeros < N)
     {
-        puts("A quantidade de números no arquivo não pode ser menor que o tamanho do bloco solicitado.");
+        puts("A quantidade de nï¿½meros no arquivo nï¿½o pode ser menor que o tamanho do bloco solicitado.");
         fclose(arq_entrada);
         fclose(arq_saida);
         libera_recursos();
