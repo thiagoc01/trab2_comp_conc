@@ -9,7 +9,6 @@
 #define NUM_PRODUTORES 1 // Definido no roteiro
 #define NUM_BLOCOS_BUFFER 10 // Definido no roteiro. São 10 bufferse e cada um com tamanho N
 
-
 /*
  * Semáforo de consumidores => Exclusão mútua entre os consumidores
  * Semáforo de slot vazio => Sinalização de um slot preenchido para consumo
@@ -136,7 +135,7 @@ void * ordena_blocos(void *arg)
 
     static int contador_linhas = 0, out = 0; // Contador compartilhado entre as threads e contador do buffer
 
-    static bool deve_ler_ultima_linha = true; // Inicialmente, todas têm a possibilidade de serem a primeira a ler uma linha órfã.
+    static int threads_finalizadas = 0; // Apenas a última thread deve tratar a linha órfa. Iremos contar quantas já acabaram.
 
     pthread_mutex_lock(&mutex);
 
@@ -191,21 +190,18 @@ void * ordena_blocos(void *arg)
         sem_post(&arquivo_livre); // Libera arquivo para escrita  
             
     }
-    
-    if (qtd_numeros % N != 0) // Haverá linha órfa apenas se um não for múltiplo/divisor do outro
+
+    pthread_mutex_lock(&mutex);
+
+    if (threads_finalizadas != num_consumidores - 1) // Se não for a última, então deve encerrar normalmente.
     {
-        pthread_mutex_lock(&mutex);
-
-        bool leu_linha_orfa = deve_ler_ultima_linha;
-
-        if (leu_linha_orfa) // Alguma thread já tratou da linha órfã
-            deve_ler_ultima_linha = false;
-
+        threads_finalizadas++;
         pthread_mutex_unlock(&mutex);
-
-        if (leu_linha_orfa) // É testado novamente apenas para liberar o lock mais rapidamente, chamando a função agora
-            ordena_linha_orfa(bloco, arq);
-    }    
+        pthread_exit(NULL);
+    }
+    
+    if (qtd_numeros % N != 0) // Haverá linha órfã apenas se um não for múltiplo/divisor do outro
+        ordena_linha_orfa(bloco, arq);
 
     pthread_exit(NULL);    
 }
@@ -327,6 +323,9 @@ void inicializa_threads()
     if (pthread_create(&threads[0], NULL, le_arquivo, (void *) arq_entrada))
     {
         puts("Erro ao criar a thread produtora.");
+        fclose(arq_entrada);
+        fclose(arq_saida);
+        libera_recursos();
         exit(5);
     }
 
@@ -335,6 +334,9 @@ void inicializa_threads()
         if (pthread_create(&threads[i], NULL, ordena_blocos, (void *) arq_saida))
         {
             printf("Erro ao criar uma thread consumidora. ID: %d.\n", i);
+            fclose(arq_entrada);
+            fclose(arq_saida);
+            libera_recursos();
             exit(6);
         }
     }
@@ -344,6 +346,9 @@ void inicializa_threads()
         if (pthread_join(threads[i], NULL))
         {
             printf("Erro ao aguardar a thread %d.\n", i);
+            fclose(arq_entrada);
+            fclose(arq_saida);
+            libera_recursos();
             exit(7);
         }
     }
