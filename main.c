@@ -101,30 +101,39 @@ void *ordenate_blocks(void *file_descriptor)
         sem_wait(&consumers);
 
         // toma os blocos do buffer
-        for (int i = 0; i < N; i++) block[i] = buffer[out][i];
+        for (int i = 0; i < N; i++)
+            block[i] = buffer[out][i];
         out = (out + 1) % NUM_BUFFER_BLOCKS;
+
         sem_post(&consumers);
         sem_post(&empty_slot);
+
         merge_sort(block, 0, N - 1); // ordenacao
 
         // escrita dos blocos ordenados
         sem_wait(&free_file); // bloqueia arquivo para escrita
-        for (int i = 0; i < N; i++) fprintf(output, "%d ", block[i]);
+
+        for (int i = 0; i < N; i++)
+            fprintf(output, "%d ", block[i]);
+
         fprintf(output, "\n");
+        
         sem_post(&free_file); // libera arquivo
     }
 
+    pthread_mutex_lock(&mutex);
     // Se nao for a ultima thread, entao deve encerrar normalmente.
     if (finished_threads != num_consumers - 1)
     {
-        pthread_mutex_lock(&mutex);
         finished_threads++;
         pthread_mutex_unlock(&mutex);
         pthread_exit(NULL);
     }
 
     // Havera linha orfa apenas se um nao for multiplo/divisor do outro
-    if (quantity_of_numbers % N != 0) ordenate_last_row(block, output);
+    // Nao e necessario o unlock, pois somente a ultima thread chegara aqui.
+    if (quantity_of_numbers % N != 0)
+        ordenate_last_row(block, output);
 
     pthread_exit(NULL);
 }
