@@ -9,12 +9,10 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define N 5 // tamanho dos blocos
-
-int main(void)
+int main(int argc, char **argv)
 {
 	FILE *file;
-	int result, i, quantity_of_numbers, number, count;
+	int result, i, quantity_of_numbers, number, count, N;
 
 	srand(time(NULL));
 
@@ -28,7 +26,15 @@ int main(void)
 	}
 
 	// Inicializacoes
-	quantity_of_numbers = (rand() % 50) * 10;
+
+	if (atoi(argv[1]) == -1)
+		quantity_of_numbers = (rand() % 50) * 10;
+
+	else
+		quantity_of_numbers = atoi(argv[1]);
+
+	N = atoi(argv[2]);
+	
 	count = 0;
 
 	// Escreve a quantidade de valores na primeira linha do arquivo

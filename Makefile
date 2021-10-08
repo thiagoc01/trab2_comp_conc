@@ -4,12 +4,35 @@ WARN= -Wall
 FLAGS = $(PTHREAD) $(WARN)
 TARGET=file_sort
 EXE_GENERATE_IN = ./resources/generate_in
+QTY_NUMBERS=
+BLOCK_SIZE =
+QTY_NUMBERS_MOD_10=$(shell echo $(QTY_NUMBERS) % 10 | bc)
+QTY_NUMBERS_REMAINDER = $(shell echo $(QTY_NUMBERS) % $(BLOCK_SIZE) | bc)
 OBJS=merge_sort.o main.o
+
+ifeq ($(QTY_NUMBERS_MOD_10), 0)
+	ifneq ($(QTY_NUMBERS_REMAINDER), 0)
+		override BLOCK_SIZE = 5
+	endif
+else
+	override BLOCK_SIZE = 5
+endif
 
 all: exe_generate_in file_sort clean
 
 exe_generate_in: generate_in
-	$(EXE_GENERATE_IN)
+
+ifeq ($(QTY_NUMBERS_MOD_10), 0)
+
+    ifneq ($(QTY_NUMBERS), 0)
+	   $(EXE_GENERATE_IN) $(QTY_NUMBERS) $(BLOCK_SIZE)
+    else
+	   $(EXE_GENERATE_IN) -1 $(BLOCK_SIZE)
+    endif
+
+else
+	$(EXE_GENERATE_IN) -1 $(BLOCK_SIZE)
+endif
 	
 file_sort: merge_sort.o main.o 
 	$(CC) $(OBJS) -o $(TARGET) $(FLAGS)
@@ -26,3 +49,5 @@ generate_in: resources/generate_in_file.c
 clean:
 	rm -f *.o
 	rm -f resources/generate_in
+
+
