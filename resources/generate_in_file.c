@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define N 10 // tamanho dos blocos
+#define N 5 // tamanho dos blocos
 
 int main(void)
 {
@@ -19,7 +19,7 @@ int main(void)
 	srand(time(NULL));
 
 	// Abertura do arquivo de entrada
-	file = fopen("../in/in.txt", "wt");
+	file = fopen("./in/in.txt", "wt");
 
 	if (file == NULL)
 	{
