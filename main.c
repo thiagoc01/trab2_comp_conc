@@ -39,12 +39,16 @@ void ordenate_last_row(int *array, FILE *output)
     sem_wait(&full_slot); // aguarda o slot para leitura
 
     // A linha orfa SEMPRE sera a ultima no buffer, pois o arquivo esta sendo lido do inicio ao fim em ordem e so ha um produtor. Logo, sera exatamente o numero de linhas MOD numero de buffers.
-    for (int i = 0; i < quantity_of_numbers % N; i++) array[i] = buffer[num_rows % NUM_BUFFER_BLOCKS][i];
+    for (int i = 0; i < quantity_of_numbers % N; i++)
+        array[i] = buffer[num_rows % NUM_BUFFER_BLOCKS][i];
 
     sem_post(&empty_slot); // sinaliza que leu a ultima linha
     merge_sort(array, 0, (quantity_of_numbers % N) - 1); // ordenacao
     sem_wait(&free_file); // sinaliza que vai utilizar o arquivo
-    for (int i = 0; i < quantity_of_numbers % N; i++) fprintf(output, "%d ", array[i]);
+
+    for (int i = 0; i < quantity_of_numbers % N; i++)
+        fprintf(output, "%d ", array[i]);
+
     fprintf(output, "\n");
     sem_post(&free_file); // libera o arquivo
 }
@@ -59,7 +63,10 @@ void *read_file(void *file_descriptor)
     while (count < num_rows)
     {
         sem_wait(&empty_slot); // verifica se ha algum slot liberado para producao
-        for (int i = 0; i < N; i++) fscanf(input, "%d", &buffer[in][i]); // guarda o numero no slot atual e na posicao do vetor
+
+        for (int i = 0; i < N; i++)
+            fscanf(input, "%d", &buffer[in][i]); // guarda o numero no slot atual e na posicao do vetor
+
         in = (in + 1) % NUM_BUFFER_BLOCKS; // incrementa o contador do slot
         sem_post(&full_slot); // sinaliza que um consumidor pode utilizar um slot
         count++; // indica que leu uma linha
@@ -68,7 +75,10 @@ void *read_file(void *file_descriptor)
     if (quantity_of_numbers % N != 0) // N nao eh divisor da quantidade de numeros no arquivo. Havera uma linha orfa.
     {
         sem_wait(&empty_slot);
-        for (int i = 0; i < quantity_of_numbers % N; i++) fscanf(input, "%d", &buffer[in][i]);
+
+        for (int i = 0; i < quantity_of_numbers % N; i++)
+            fscanf(input, "%d", &buffer[in][i]);
+        
         sem_post(&full_slot);
     }
 
@@ -91,10 +101,17 @@ void *ordenate_blocks(void *file_descriptor)
     {
         // Verifica se nao ira ler linhas a mais
         pthread_mutex_lock(&mutex);
+
         count_rows++;
         count_rows_thread = count_rows;
+        
+        if (count_rows > num_rows)
+        {
+            pthread_mutex_unlock(&mutex);
+            break;
+        }
+
         pthread_mutex_unlock(&mutex);
-        if (count_rows > num_rows) break;
 
         // Padrao de consumidores
         sem_wait(&full_slot);
