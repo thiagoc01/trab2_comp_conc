@@ -33,6 +33,64 @@ char *output_file; // arquivo de saida
 
 /* Funcoes */
 
+// Funcao utilizada para checar corretude do arquivo de saída após a ordenação.
+void analyze_output_correctness(FILE *out)
+{
+    out = fopen(output_file, "r");
+
+    int count_line = 0;
+    int smallest, num;
+
+    
+    while (!feof(out))
+    {
+        // Se o arquivo está ordenado, o primeiro valor é sempre o menor da linha.
+        fscanf(out, "%d ", &smallest);
+
+        for (int i = 1 ; i < N ; i++)
+        {
+            fscanf(out, "%d ", &num);
+
+            if (num < smallest) // Encontrou um número no meio da linha que é menor do que o primeiro.
+            {
+                printf("Há uma inconsistência no arquivo. O número %d na linha %d é menor que %d.\n", num, count_line + 1, smallest);
+                fclose(out);
+                return;
+            }
+        }
+
+        count_line++;
+    }
+
+    // Se o número de linhas for menor que o contado no início do programa, alguma linha não foi escrita.
+
+    if (quantity_of_numbers % N == 0)
+    {
+        if (count_line != (quantity_of_numbers / N))
+        {
+            printf("Há menos ou mais linhas no arquivo de saída em relação ao arquivo de entrada.\n");
+            fclose(out);
+            return;
+        }
+    }
+
+    else
+    {
+        if (count_line != ((quantity_of_numbers / N) + 1 ))
+        {
+            printf("Há menos linhas no arquivo de saída em relação ao arquivo de entrada.\n");
+            fclose(out);
+            return;
+        }
+    }
+
+    puts("O arquivo de saída está correto.");
+
+    fclose(out);
+
+
+}
+
 // Funcao utilizada para o processamento da ultima linha presente no caso que a quantidade de numeros nao eh divisivel pelo tamanho do bloco
 void ordenate_last_row(int *array, FILE *output)
 {
@@ -251,7 +309,8 @@ void close_files(FILE *input, FILE *output) {
     fclose(output);
 }
 // Funcao para aguardar o termino das threads
-void join_threads(pthread_t *threads, FILE *input, FILE *output, int num_threads) {
+void join_threads(pthread_t *threads, FILE *input, FILE *output, int num_threads)
+{
     for (int i = 0; i < num_threads; i++)
     {
         if (pthread_join(*(threads + i), NULL))
@@ -307,6 +366,8 @@ int main(int argc, char **argv)
     init();
     create_threads(&threads, num_consumers, NUM_PRODUCERS, input, output);
     join_threads(threads, input, output, num_consumers + NUM_PRODUCERS);
+    analyze_output_correctness(output);
     destroy();
+
     return 0;
 }
