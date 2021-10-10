@@ -33,6 +33,57 @@ char *output_file; // arquivo de saida
 
 /* Funcoes */
 
+// Funcao utilizada para checar corretude do arquivo de saida apos a ordenacao.
+void analyze_output_correctness(FILE *out)
+{
+    out = fopen(output_file, "r");
+
+    int count_line = 0;
+    int smallest, num;
+
+    while (!feof(out))
+    {
+        // Se o arquivo esta ordenado, o primeiro valor eh sempre o menor da linha
+        fscanf(out, "%d ", &smallest);
+
+        for (int i = 1 ; i < N ; i++)
+        {
+            fscanf(out, "%d ", &num);
+
+            if (num < smallest) // Encontrou um numero no meio da linha que eh menor do que o primeiro
+            {
+                printf("Ha uma inconsistencia no arquivo. O numero %d na linha %d eh menor que %d.\n", num, count_line + 1, smallest);
+                fclose(out);
+                return;
+            }
+        }
+        count_line++;
+    }
+
+    // Se o numero de linhas for diferente que o contado no inicio do programa, alguma linha nao foi escrita no arquivo de saida
+    if (quantity_of_numbers % N == 0)
+    {
+        if (count_line != (quantity_of_numbers / N))
+        {
+            printf("Ha menos ou mais linhas no arquivo de saida em relacao ao arquivo de entrada.\n");
+            fclose(out);
+            return;
+        }
+    }
+    else
+    {
+        if (count_line != ((quantity_of_numbers / N) + 1 ))
+        {
+            printf("Ha menos ou mais linhas no arquivo de saida em relacao ao arquivo de entrada.\n");
+            fclose(out);
+            return;
+        }
+    }
+
+    printf("O arquivo de saida %s esta correto!\n", output_file);
+    fclose(out);
+}
+
 // Funcao utilizada para o processamento da ultima linha presente no caso que a quantidade de numeros nao eh divisivel pelo tamanho do bloco
 void ordenate_last_row(int *array, FILE *output)
 {
@@ -251,7 +302,8 @@ void close_files(FILE *input, FILE *output) {
     fclose(output);
 }
 // Funcao para aguardar o termino das threads
-void join_threads(pthread_t *threads, FILE *input, FILE *output, int num_threads) {
+void join_threads(pthread_t *threads, FILE *input, FILE *output, int num_threads)
+{
     for (int i = 0; i < num_threads; i++)
     {
         if (pthread_join(*(threads + i), NULL))
@@ -298,11 +350,11 @@ void create_threads(pthread_t **threads, int consumers, int producers, FILE *inp
 }
 
 // Funcao para mostrar o tempo total de execucao de uma tarefa
-void show_task_time(double start) 
+void show_task_time(double start, int num_threads) 
 {
     double end;
     GET_TIME(end);
-    printf("Tempo total: %lf s\n\n", end - start);
+    printf("Tempo total com %d threads: %lf s\n", num_threads, end - start);
 }
 
 int main(int argc, char **argv)
@@ -314,11 +366,15 @@ int main(int argc, char **argv)
     handle_arguments(argc, argv);
     open_files(&input, &output);
     init();
+
     GET_TIME(start);
     create_threads(&threads, num_consumers, NUM_PRODUCERS, input, output);
     join_threads(threads, input, output, num_consumers + NUM_PRODUCERS);
-    show_task_time(start);
+
+    show_task_time(start, num_consumers);
+    analyze_output_correctness(output);
+
     destroy();
-    
+
     return 0;
 }
