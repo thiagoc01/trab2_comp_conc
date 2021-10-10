@@ -4,11 +4,15 @@ WARN= -Wall
 FLAGS = $(PTHREAD) $(WARN)
 TARGET=file_sort
 EXE_GENERATE_IN = ./resources/generate_in
-QTY_NUMBERS=
-BLOCK_SIZE =
+QTY_NUMBERS=0
+BLOCK_SIZE=5
 QTY_NUMBERS_MOD_10=$(shell echo $(QTY_NUMBERS) % 10 | bc)
 QTY_NUMBERS_REMAINDER = $(shell echo $(QTY_NUMBERS) % $(BLOCK_SIZE) | bc)
 OBJS=merge_sort.o main.o
+
+ifeq ($(QTY_NUMBERS), 0)
+	override BLOCK_SIZE = 5
+endif
 
 ifeq ($(QTY_NUMBERS_MOD_10), 0)
 	ifneq ($(QTY_NUMBERS_REMAINDER), 0)
