@@ -297,16 +297,28 @@ void create_threads(pthread_t **threads, int consumers, int producers, FILE *inp
     }
 }
 
+// Funcao para mostrar o tempo total de execucao de uma tarefa
+void show_task_time(double start) 
+{
+    double end;
+    GET_TIME(end);
+    printf("Tempo total: %lf s\n\n", end - start);
+}
+
 int main(int argc, char **argv)
 {
     FILE *input, *output; // arquivos de entrada e saida
     pthread_t *threads; // identificadores das threads
+    double start; // variavel para controle de tempo
 
     handle_arguments(argc, argv);
     open_files(&input, &output);
     init();
+    GET_TIME(start);
     create_threads(&threads, num_consumers, NUM_PRODUCERS, input, output);
     join_threads(threads, input, output, num_consumers + NUM_PRODUCERS);
+    show_task_time(start);
     destroy();
+    
     return 0;
 }
