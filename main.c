@@ -33,6 +33,28 @@ char *output_file; // arquivo de saida
 
 /* Funcoes */
 
+void ordenate_blocks_seq(FILE *in, FILE *out)
+{
+    int position = 0;
+
+    for (int i = 0 ; i < num_rows ; i++)
+    {
+        for (int j = 0 ; j < N ; j++)
+            fscanf(in, "%d ", &buffer[position][j]);
+
+        merge_sort(buffer[position], 0, N-1);
+
+        for (int j = 0 ; j < N ; j++)
+            fprintf(out, "%d ", buffer[position][j]);
+        fprintf(out, "\n");
+
+        position = (position + 1) % NUM_BUFFER_BLOCKS;
+    }
+
+    fclose(in);
+    fclose(out);
+}
+
 // Funcao utilizada para checar corretude do arquivo de saida apos a ordenacao.
 void analyze_output_correctness(FILE *out)
 {
@@ -351,11 +373,17 @@ void create_threads(pthread_t **threads, int consumers, int producers, FILE *inp
 }
 
 // Funcao para mostrar o tempo total de execucao de uma tarefa
-void show_task_time(double start, int num_threads) 
+void show_task_time(double start, int num_threads, int seq) 
 {
     double end;
     GET_TIME(end);
-    printf("Tempo total com %d threads: %lf s\n", num_threads, end - start);
+
+    if (seq)
+        printf("Tempo total sequencial: %lf s\n", end - start);
+
+    else
+        printf("Tempo total com %d threads: %lf s\n", num_threads, end - start);
+
 }
 
 int main(int argc, char **argv)
@@ -368,12 +396,19 @@ int main(int argc, char **argv)
     open_files(&input, &output);
     init();
 
+    
+    GET_TIME(start);
+    ordenate_blocks_seq(input, output);
+    show_task_time(start, num_consumers, 1);
+    analyze_output_correctness(output);
+
+    open_files(&input, &output);
     GET_TIME(start);
     create_threads(&threads, num_consumers, NUM_PRODUCERS, input, output);
     join_threads(threads, input, output, num_consumers + NUM_PRODUCERS);
-    show_task_time(start, num_consumers);
-
+    show_task_time(start, num_consumers, 0);
     analyze_output_correctness(output);
+
     destroy();
 
     return 0;
