@@ -63,7 +63,7 @@ void analyze_output_correctness(FILE *out)
     // Se o numero de linhas for diferente que o contado no inicio do programa, alguma linha nao foi escrita no arquivo de saida
     if (quantity_of_numbers % N == 0)
     {
-        if (count_line != (quantity_of_numbers / N))
+        if (count_line != num_rows)
         {
             printf("Ha menos ou mais linhas no arquivo de saida em relacao ao arquivo de entrada.\n");
             fclose(out);
@@ -72,7 +72,7 @@ void analyze_output_correctness(FILE *out)
     }
     else
     {
-        if (count_line != ((quantity_of_numbers / N) + 1 ))
+        if (count_line != (num_rows + 1 ))
         {
             printf("Ha menos ou mais linhas no arquivo de saida em relacao ao arquivo de entrada.\n");
             fclose(out);
