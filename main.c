@@ -301,6 +301,7 @@ void close_files(FILE *input, FILE *output) {
     fclose(input);
     fclose(output);
 }
+
 // Funcao para aguardar o termino das threads
 void join_threads(pthread_t *threads, FILE *input, FILE *output, int num_threads)
 {
@@ -370,10 +371,9 @@ int main(int argc, char **argv)
     GET_TIME(start);
     create_threads(&threads, num_consumers, NUM_PRODUCERS, input, output);
     join_threads(threads, input, output, num_consumers + NUM_PRODUCERS);
-
     show_task_time(start, num_consumers);
-    analyze_output_correctness(output);
 
+    analyze_output_correctness(output);
     destroy();
 
     return 0;
