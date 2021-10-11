@@ -1,4 +1,4 @@
-# Computação Concorrente | Trabalho 01 | 2021.1
+# Computação Concorrente | Trabalho 02 | 2021.1
 *Solução concorrente para o problema de ordenar blocos de valores em ordem crescente dado um arquivo de entrada.*
 
 ## Tabela de Conteúdo
@@ -25,6 +25,16 @@ O repositório é composto pelos subdiretórios:
 1.  Clone esse repositório
 ```
   git clone https://github.com/thiagoc01/trab2_comp_conc.git
+```
+
+2. Utilize o comando abaixo do makefile para gerar um arquivo de entrada, que estará em in/in.txt, e também compilar todos os arquivos necessários para rodar o programa. *QTY_NUMBERS* é a quantidade de valores que o arquivo deve ter e *BLOCK_SIZE* é o tamanho de cada bloco
+```
+  make QTY_NUMBERS=1000000000 BLOCK_SIZE=100
+```
+
+3. Execute o programa
+```
+  ./file_sort <numero-de-threads> <tamanho-do-bloco> <arquivo-de-entrada> <arquivo-de-saida>
 ```
 
 ## 👩‍💻 Autores
