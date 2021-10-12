@@ -397,10 +397,11 @@ int main(int argc, char **argv)
     open_files(&input, &output);
     init();
 
-    GET_TIME(start);
-    ordenate_blocks_seq(input, output);
-    show_task_time(start, num_consumers, 1);
-    analyze_output_correctness(output);
+    // Comentado pois apenas foi utilizado para os testes de desempenho
+    // GET_TIME(start);
+    // ordenate_blocks_seq(input, output);
+    // show_task_time(start, num_consumers, 1);
+    // analyze_output_correctness(output);
 
     open_files(&input, &output);
     GET_TIME(start);
