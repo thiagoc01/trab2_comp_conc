@@ -34,7 +34,7 @@ O repositório é composto pelos subdiretórios:
 
 3. Execute o programa
 ```
-  ./file_sort <numero-de-threads> <tamanho-do-bloco> <arquivo-de-entrada> <arquivo-de-saida>
+  ./file_sort <numero-de-threads-consumidoras> <tamanho-do-bloco> <arquivo-de-entrada> <arquivo-de-saida>
 ```
 
 ## 👩‍💻 Autores
