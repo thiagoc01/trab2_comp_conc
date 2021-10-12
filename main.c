@@ -33,6 +33,7 @@ char *output_file; // arquivo de saida
 
 /* Funcoes */
 
+// Funcao para ordenar os blocos de valores do arquivo de forma sequencial
 void ordenate_blocks_seq(FILE *in, FILE *out)
 {
     int position = 0;
@@ -94,7 +95,7 @@ void analyze_output_correctness(FILE *out)
     }
     else
     {
-        if (count_line != (num_rows + 1 ))
+        if (count_line != (num_rows + 1))
         {
             printf("Ha menos ou mais linhas no arquivo de saida em relacao ao arquivo de entrada.\n");
             fclose(out);
@@ -396,7 +397,6 @@ int main(int argc, char **argv)
     open_files(&input, &output);
     init();
 
-    
     GET_TIME(start);
     ordenate_blocks_seq(input, output);
     show_task_time(start, num_consumers, 1);
